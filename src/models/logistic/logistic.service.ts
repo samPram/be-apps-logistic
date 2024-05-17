@@ -18,8 +18,8 @@ export class LogisticService {
     return await this.courierRepository
       .findOne({
         where: {
-          origin_name: origin,
-          destination_name: destination,
+          origin_name: ILike(`%${origin}%`),
+          destination_name: ILike(`%${destination}%`),
         },
         select: {
           logistic_name: true,
@@ -28,8 +28,18 @@ export class LogisticService {
           duration: true,
         },
       })
-      .then((res) => res)
+      .then((res) => {
+        if (!res) {
+          throw new Error('Data not found!');
+        }
+
+        return res;
+      })
       .catch((err) => {
+        if (err instanceof Error && err.message.includes('Data not found!')) {
+          throw new HttpException(err.message, HttpStatus.NOT_FOUND);
+        }
+
         throw new HttpException(
           'Internal server error!',
           HttpStatus.INTERNAL_SERVER_ERROR,
